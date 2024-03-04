@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { StyleSheet, View, Text, Pressable, Modal } from "react-native";
 
-export default function TabOneScreen() {
+export default function home() {
   const [modalVisible, setModalVisible] = useState(false);
 
   return (
