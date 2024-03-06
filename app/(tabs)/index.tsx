@@ -8,7 +8,7 @@ import {
   ImageBackground,
   TextInput,FlatList,SafeAreaView
 } from "react-native";
-import meals from "../../constants/mockData";
+import tempMeal from "../../constants/mockData";
 
 type mealProps = {
   mealName:string;
@@ -17,16 +17,36 @@ type mealProps = {
 
 }
 
-const Meal = ({mealName,id,calories}:mealProps)=>(<View style={{flex:1, flexDirection:"row",justifyContent:"space-between",backgroundColor:id %2==1?"#456867":"none",padding:12,borderRadius:6}}>
+const dailyAllowance:number=2000;
+
+const Meal = ({mealName,id,calories}:mealProps)=>(<View style={{flex:1, flexDirection:"row",justifyContent:"space-between",backgroundColor:id %2==1?"#456867":"#8BA493",padding:12,borderRadius:6}}>
   <Text style={{fontSize:15,color:"white",fontWeight:"bold"}}>{mealName}</Text>
   <Text style={{fontWeight:"bold",fontSize:20,color:"#CFFACB"}}>{calories}</Text>
 
 </View>)
 
 export default function home() {
-  const [modalVisible, setModalVisible] = useState(false);
-  const [text, setText] = useState("");
-  const [calories, setCalories] = useState("");
+  const [state,setState] = useState({
+    meals:[],
+    text:"",
+    calories:"",
+    modalVisible:false,
+    
+
+
+  })
+
+function setCalories(calories:string){
+  setState((prev)=>({...prev,calories}))
+}
+
+function setText(text:string){
+  setState(prev =>({...prev,text}))
+}
+
+function setModalVisible(){
+  setState(prev=>({...prev,modalVisible:!prev.modalVisible}))
+}
   return (
     <>
       <ImageBackground
@@ -42,7 +62,7 @@ export default function home() {
           <View style={styles.caloriesContainer}>
             <View style={styles.textContainer}>
               <Text style={styles.smallerText}>Remaining</Text>
-              <Text style={styles.text}>540 cal</Text>
+              <Text style={styles.text}>{dailyAllowance- state.meals.reduce((acc,meal)=>acc+meal.calories,0)}</Text>
             </View>
             <Text style={styles.resetText}>Resets in: 542</Text>
           </View>
@@ -58,7 +78,7 @@ export default function home() {
                 fontWeight: "bold",
               }}
               onChangeText={setText}
-              value={text}
+              value={state.text}
               placeholder="What did you eat?"
             />
             <TextInput
@@ -72,12 +92,12 @@ export default function home() {
                 fontWeight: "bold",
               }}
               onChangeText={setCalories}
-              value={calories}
+              value={state.calories}
               placeholder="Number of Calories"
             />
               <Pressable
                 style={styles.button}
-                onPress={() => meals.push({mealName:text,calories:parseInt(calories),id:meals.length+1})}
+                onPress={() =>{ setState(prev=> ({...prev, meals:[...prev.meals,{id:state.meals.length,mealName:state.text,calories:parseInt(state.calories)}]})) }}
                 onLongPress={() => alert("this is a long press")}>
                 <Text style={{ fontSize: 20, fontWeight: "bold" }}>
                   Log Meal
@@ -85,29 +105,17 @@ export default function home() {
               </Pressable>
           </View>
         <FlatList
-        style={{width:245,backgroundColor:"#8BA493",borderRadius:12,padding:10,marginTop:20,}}
-          data={meals}
+        style={{width:245,borderRadius:12,padding:10,marginTop:20,}}
+          data={state.meals}
           renderItem={({ item}) => <Meal  {...item }  />}
           keyExtractor={(item) => item.id.toString()}
         />
+        <View>
+          <Text>SUM {state.meals.reduce((acc,meal)=>acc+meal.calories,0)}</Text>
+        </View>
         </SafeAreaView>
 
-        <Modal
-          style={styles.modal}
-          visible={modalVisible}
-          transparent={false}
-          animationType="slide">
-          <Pressable
-            style={styles.button}
-            onPress={() => setModalVisible((prev) => !prev)}
-            onLongPress={() => alert("this is a long press")}>
-            <Text style={{ fontSize: 20, fontWeight: "bold" }}>
-              Motivate Me
-            </Text>
-          </Pressable>
-
-          <Text>Modal</Text>
-        </Modal>
+      
       </ImageBackground>
     </>
   );
