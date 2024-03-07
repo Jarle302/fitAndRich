@@ -8,7 +8,6 @@ import {
   ImageBackground,
   TextInput,FlatList,SafeAreaView
 } from "react-native";
-import tempMeal from "../../constants/mockData";
 
 type mealProps = {
   mealName:string;
