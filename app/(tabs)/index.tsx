@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import MealComponent from "@/constants/components/MealComponent";
+import ToastManager, { Toast } from "toastify-react-native";
 
 import useDb from "@/CustomHooks/useDb";
 import {
@@ -24,13 +25,19 @@ import useStore from "../../CustomHooks/useStore";
 const today = new Date().toISOString().split("T")[0];
 const dailyAllowance: number = 2000;
 
-export default async function home() {
+export default function home() {
+  const { meals, addMeal } = useStore();
   const [mealName, setMealName] = useState("");
-  const [calories, setCalories] = useState("");
-  const { getTodaysMeals, addMeal }: dbFuncs = useDb();
+  const [calories, setCalories] = useState(0);
+  const { getTodaysMeals, addMealDb }: dbFuncs = useDb();
+  console.log({ meals });
+  const data = getTodaysMeals();
+  console.log("Data from the database" + { data });
 
-  const data = await getTodaysMeals();
-  console.log({ data });
+  function setCaloriesNumber(number: string): void {
+    const cal = parseInt(number, 10);
+    setCalories(cal);
+  }
   return (
     <ImageBackground
       source={require("/home/jarledev/github/expo/fitAndRich/assets/images/appBackground.png")}
@@ -39,10 +46,13 @@ export default async function home() {
       <SafeAreaView style={styles.container}>
         <View style={styles.caloriesContainer}>
           <View style={styles.textContainer}>
-            <Text style={styles.smallerText}>Remaining</Text>
+            <Text style={styles.smallerText}>
+              {dailyAllowance -
+                meals.reduce((acc, meal) => acc + meal.calories, 0)}
+            </Text>
             <Text style={styles.text}></Text>
           </View>
-          <Text style={styles.resetText}>Resets in: 542</Text>
+          <Text style={styles.resetText}>Resets in:</Text>
         </View>
 
         <View
@@ -75,17 +85,27 @@ export default async function home() {
               borderRadius: 12,
               fontWeight: "bold",
             }}
-            onChangeText={setCalories}
-            value={calories}
+            onChangeText={setCaloriesNumber}
+            value={calories.toString()}
             placeholder="Number of Calories"
           />
-          <Pressable style={styles.button} onPress={() => {}}>
+          <Pressable
+            style={styles.button}
+            onPress={() => {
+              Toast.success("test");
+              addMeal({
+                mealName,
+                calories,
+                id: Math.random(),
+                created: new Date().toDateString().split("T")[0],
+              });
+            }}>
             <Text style={{ fontSize: 20, fontWeight: "bold" }}>Log Meal</Text>
           </Pressable>
         </View>
         <FlatList
           style={{ width: 245, borderRadius: 12, padding: 10, marginTop: 20 }}
-          data={useStore((state) => state.meals)}
+          data={meals}
           renderItem={({ item }) => (
             <MealComponent
               calories={item.calories}
@@ -97,13 +117,11 @@ export default async function home() {
         />
         <View>
           <Text>
-            SUM:{" "}
-            {useStore((state) =>
-              state.meals.reduce((acc, meal) => acc + meal.calories, 0)
-            )}
+            SUM: {meals.reduce((acc, meal) => acc + meal.calories, 0)}
           </Text>
         </View>
       </SafeAreaView>
+      <ToastManager />
     </ImageBackground>
   );
 }

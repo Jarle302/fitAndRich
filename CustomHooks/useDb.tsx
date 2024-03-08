@@ -36,7 +36,7 @@ export default function useDb() {
     return db.execAsync([{ sql, args: [] }], false);
   }
 
-  async function addMeal(meal: dto_meal_request) {
+  async function addMealDb(meal: dto_meal_request) {
     const created = today;
     let id = await getDateID();
     if (!id) {
@@ -50,5 +50,5 @@ export default function useDb() {
     return db.execAsync([{ sql, args }], false);
   }
 
-  return { getTodaysMeals, addMeal };
+  return { getTodaysMeals, addMealDb };
 }

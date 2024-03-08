@@ -17,7 +17,7 @@ export type dto_meal_response = dto_meal_request & { id: number };
 
 export type dbFuncs = {
   getTodaysMeals: () => Promise<(SQLite.ResultSetError | SQLite.ResultSet)[]>;
-  addMeal: (
+  addMealDb: (
     mealProps: dto_meal_request
   ) => Promise<(SQLite.ResultSetError | SQLite.ResultSet)[]>;
 };
