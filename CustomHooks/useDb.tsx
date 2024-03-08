@@ -1,12 +1,13 @@
 import * as SQLite from "expo-sqlite";
 import { useEffect } from "react";
 
+
 export interface Meal {
   calories: number;
   mealName: string;
-  id: string;
   created: string;
 }
+
 
 export interface date_meal {}
 
@@ -28,7 +29,7 @@ export default function useDb() {
     );
   };
   
-  function geTodaysMeals() {
+  function getTodaysMeals() {
     const sql = `
     SELECT * FROM meals
     INNER JOIN date_diet ON meals.diet_date_id = date_diet.id
@@ -45,11 +46,17 @@ export default function useDb() {
   
   
   async function addMeal(meal: Meal) {
-   const id = await getDateID()
-    
-    const sql = `INSERT INTO meals (mealName, calories, diet_date_id) VALUES (${meal.mealName}, ${meal.calories}, ${id})`;
-    return db.execAsync([{ sql, args: [] }], false);
+   let id = await getDateID()
+   if ( !id ) {
+      const sql = `INSERT INTO date_diet (created) VALUES (${today})`;
+      db.execAsync([{ sql, args: [] }], false);
+    id = await getDateID()  
+   }
+   const {mealName,calories,created} = meal;
+   const args = [mealName,calories,created,id,]
+    const sql = `INSERT INTO meals (mealName, calories,created, diet_date_id) VALUES (?,?,?,?)`;
+    return db.execAsync([{ sql, args }], false);
   }
 
-  return [geTodaysMeals, addMeal]
+  return {getTodaysMeals, addMeal}
 }

@@ -1,4 +1,7 @@
 import React, { useState } from "react";
+import * as SQLite from "expo-sqlite";
+
+import useDb, { Meal } from "@/CustomHooks/useDb";
 import {
   StyleSheet,
   View,
@@ -6,46 +9,79 @@ import {
   Pressable,
   Modal,
   ImageBackground,
-  TextInput,FlatList,SafeAreaView
+  TextInput,
+  FlatList,
+  SafeAreaView,
 } from "react-native";
 
-type mealProps = {
-  mealName:string;
-  id:number;
-  calories:number;
+type dto_meal_request = {
+  mealName: string;
+  calories: number;
+  id: number;
+};
 
-}
+type dbFuncs = {
+  getTodaysMeals: () => Promise<(SQLite.ResultSetError | SQLite.ResultSet)[]>;
+  addMeal: (
+    mealProps: Meal
+  ) => Promise<(SQLite.ResultSetError | SQLite.ResultSet)[]>;
+};
 
-const dailyAllowance:number=2000;
+type State = {
+  meals: dto_meal_request[];
+  text: string;
+  calories: string;
+  modalVisible: boolean;
+  id: number;
+};
 
-const Meal = ({mealName,id,calories}:mealProps)=>(<View style={{flex:1, flexDirection:"row",justifyContent:"space-between",backgroundColor:id %2==1?"#456867":"#8BA493",padding:12,borderRadius:6}}>
-  <Text style={{fontSize:15,color:"white",fontWeight:"bold"}}>{mealName}</Text>
-  <Text style={{fontWeight:"bold",fontSize:20,color:"#CFFACB"}}>{calories}</Text>
+const today = new Date().toISOString().split("T")[0];
+const dailyAllowance: number = 2000;
 
-</View>)
+const MealComponent = ({ mealName, id, calories }: dto_meal_request) => (
+  <View
+    style={{
+      flex: 1,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      backgroundColor: id % 2 == 1 ? "#456867" : "#8BA493",
+      padding: 12,
+      borderRadius: 6,
+    }}>
+    <Text style={{ fontSize: 15, color: "white", fontWeight: "bold" }}>
+      {mealName}
+    </Text>
+    <Text style={{ fontWeight: "bold", fontSize: 20, color: "#CFFACB" }}>
+      {calories}
+    </Text>
+  </View>
+);
 
-export default function home() {
-  const [state,setState] = useState({
-    meals:[],
-    text:"",
-    calories:"",
-    modalVisible:false,
-    
+export default async function home() {
+  const { getTodaysMeals, addMeal }: dbFuncs = useDb();
+  const [state, setState] = useState<State>({
+    meals: [],
+    text: "",
+    calories: "",
+    modalVisible: false,
+    id: 0,
+  });
 
 
-  })
+const data = await getTodaysMeals();
+console.log(data);
 
-function setCalories(calories:string){
-  setState((prev)=>({...prev,calories}))
-}
+  function setCalories(calories: string) {
+    setState((prev) => ({ ...prev, calories }));
+  }
 
-function setText(text:string){
-  setState(prev =>({...prev,text}))
-}
+  function setText(text: string) {
+    setState((prev) => ({ ...prev, text }));
+  }
 
-function setModalVisible(){
-  setState(prev=>({...prev,modalVisible:!prev.modalVisible}))
-}
+  function setModalVisible() {
+    setState((prev) => ({ ...prev, modalVisible: !prev.modalVisible }));
+  }
   return (
     <>
       <ImageBackground
@@ -61,12 +97,21 @@ function setModalVisible(){
           <View style={styles.caloriesContainer}>
             <View style={styles.textContainer}>
               <Text style={styles.smallerText}>Remaining</Text>
-              <Text style={styles.text}>{dailyAllowance- state.meals.reduce((acc,meal)=>acc+meal.calories,0)}</Text>
+              <Text style={styles.text}>
+                {dailyAllowance -
+                  state.meals.reduce((acc, meal) => acc + meal.calories, 0)}
+              </Text>
             </View>
             <Text style={styles.resetText}>Resets in: 542</Text>
           </View>
 
-          <View style={{ gap: 8,backgroundColor:"#8BA493",borderRadius:12,padding:10, }}>
+          <View
+            style={{
+              gap: 8,
+              backgroundColor: "#8BA493",
+              borderRadius: 12,
+              padding: 10,
+            }}>
             <TextInput
               style={{
                 width: 235,
@@ -94,27 +139,42 @@ function setModalVisible(){
               value={state.calories}
               placeholder="Number of Calories"
             />
-              <Pressable
-                style={styles.button}
-                onPress={() =>{ setState(prev=> ({...prev, meals:[...prev.meals,{id:state.meals.length,mealName:state.text,calories:parseInt(state.calories)}]})) }}
-                onLongPress={() => alert("this is a long press")}>
-                <Text style={{ fontSize: 20, fontWeight: "bold" }}>
-                  Log Meal
-                </Text>
-              </Pressable>
+            <Pressable
+              style={styles.button}
+              onPress={() => {
+                setState((prev) => ({
+                  ...prev,
+                  meals: [
+                    ...prev.meals,
+                    {
+                      id: state.meals.length,
+                      mealName: state.text,
+                      calories: parseInt(state.calories),
+                    },
+                  ],
+                }));
+                addMeal({
+                  mealName: state.text,
+                  calories: parseInt(state.calories),
+                  created: today,
+                });
+              }}
+              onLongPress={() => alert("this is a long press")}>
+              <Text style={{ fontSize: 20, fontWeight: "bold" }}>Log Meal</Text>
+            </Pressable>
           </View>
-        <FlatList
-        style={{width:245,borderRadius:12,padding:10,marginTop:20,}}
-          data={state.meals}
-          renderItem={({ item}) => <Meal  {...item }  />}
-          keyExtractor={(item) => item.id.toString()}
-        />
-        <View>
-          <Text>SUM {state.meals.reduce((acc,meal)=>acc+meal.calories,0)}</Text>
-        </View>
+          <FlatList
+            style={{ width: 245, borderRadius: 12, padding: 10, marginTop: 20 }}
+            data={state.meals}
+            renderItem={({ item }) => <MealComponent {...item} />}
+            keyExtractor={(item) => item.id.toString()}
+          />
+          <View>
+            <Text>
+              SUM {state.meals.reduce((acc, meal) => acc + meal.calories, 0)}
+            </Text>
+          </View>
         </SafeAreaView>
-
-      
       </ImageBackground>
     </>
   );
@@ -125,7 +185,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "flex-start",
-    gap: 15,padding:20,
+    gap: 15,
+    padding: 20,
   },
   title: {
     fontSize: 65,
