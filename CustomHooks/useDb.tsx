@@ -1,13 +1,7 @@
 import * as SQLite from "expo-sqlite";
 import { useEffect } from "react";
-
-
-export interface Meal {
-  calories: number;
-  mealName: string;
-  created: string;
-}
-
+import { Meal } from "@/constants/interfaces/interfaces";
+import { dto_meal_request } from "@/constants/interfaces/interfaces";
 
 export interface date_meal {}
 
@@ -28,35 +22,33 @@ export default function useDb() {
       console.log("db created")
     );
   };
-  
+
   function getTodaysMeals() {
     const sql = `
     SELECT * FROM meals
     INNER JOIN date_diet ON meals.diet_date_id = date_diet.id
-    WHERE created = ${today} `
+    WHERE created = ${today} `;
     return db.execAsync([{ sql, args: [] }], false);
   }
-  
-  
-  async function getDateID(){
+
+  async function getDateID() {
     const sql = `SELECT id FROM date_diet WHERE created = ${today}`;
     return db.execAsync([{ sql, args: [] }], false);
-  
   }
-  
-  
-  async function addMeal(meal: Meal) {
-   let id = await getDateID()
-   if ( !id ) {
+
+  async function addMeal(meal: dto_meal_request) {
+    const created = today;
+    let id = await getDateID();
+    if (!id) {
       const sql = `INSERT INTO date_diet (created) VALUES (${today})`;
       db.execAsync([{ sql, args: [] }], false);
-    id = await getDateID()  
-   }
-   const {mealName,calories,created} = meal;
-   const args = [mealName,calories,created,id,]
+      id = await getDateID();
+    }
+    const { mealName, calories } = meal;
+    const args = [mealName, calories, created, id];
     const sql = `INSERT INTO meals (mealName, calories,created, diet_date_id) VALUES (?,?,?,?)`;
     return db.execAsync([{ sql, args }], false);
   }
 
-  return {getTodaysMeals, addMeal}
+  return { getTodaysMeals, addMeal };
 }

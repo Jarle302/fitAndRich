@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import * as SQLite from "expo-sqlite";
+import MealComponent from "@/constants/components/MealComponent";
 
-import useDb, { Meal } from "@/CustomHooks/useDb";
+import useDb from "@/CustomHooks/useDb";
 import {
   StyleSheet,
   View,
@@ -13,170 +13,98 @@ import {
   FlatList,
   SafeAreaView,
 } from "react-native";
-
-type dto_meal_request = {
-  mealName: string;
-  calories: number;
-  id: number;
-};
-
-type dbFuncs = {
-  getTodaysMeals: () => Promise<(SQLite.ResultSetError | SQLite.ResultSet)[]>;
-  addMeal: (
-    mealProps: Meal
-  ) => Promise<(SQLite.ResultSetError | SQLite.ResultSet)[]>;
-};
-
-type State = {
-  meals: dto_meal_request[];
-  text: string;
-  calories: string;
-  modalVisible: boolean;
-  id: number;
-};
+import {
+  dto_meal_request,
+  dto_meal_response,
+  dbFuncs,
+  Meal,
+} from "@/constants/interfaces/interfaces";
+import useStore from "../../CustomHooks/useStore";
 
 const today = new Date().toISOString().split("T")[0];
 const dailyAllowance: number = 2000;
 
-const MealComponent = ({ mealName, id, calories }: dto_meal_request) => (
-  <View
-    style={{
-      flex: 1,
-      flexDirection: "row",
-      justifyContent: "space-between",
-      backgroundColor: id % 2 == 1 ? "#456867" : "#8BA493",
-      padding: 12,
-      borderRadius: 6,
-    }}>
-    <Text style={{ fontSize: 15, color: "white", fontWeight: "bold" }}>
-      {mealName}
-    </Text>
-    <Text style={{ fontWeight: "bold", fontSize: 20, color: "#CFFACB" }}>
-      {calories}
-    </Text>
-  </View>
-);
-
 export default async function home() {
+  const [mealName, setMealName] = useState("");
+  const [calories, setCalories] = useState("");
   const { getTodaysMeals, addMeal }: dbFuncs = useDb();
-  const [state, setState] = useState<State>({
-    meals: [],
-    text: "",
-    calories: "",
-    modalVisible: false,
-    id: 0,
-  });
 
-
-const data = await getTodaysMeals();
-console.log(data);
-
-  function setCalories(calories: string) {
-    setState((prev) => ({ ...prev, calories }));
-  }
-
-  function setText(text: string) {
-    setState((prev) => ({ ...prev, text }));
-  }
-
-  function setModalVisible() {
-    setState((prev) => ({ ...prev, modalVisible: !prev.modalVisible }));
-  }
+  const data = await getTodaysMeals();
+  console.log({ data });
   return (
-    <>
-      <ImageBackground
-        source={require("/home/jarledev/github/expo/fitAndRich/assets/images/appBackground.png")}
-        style={{ height: "100%" }}
-        blurRadius={0}>
-        <SafeAreaView style={styles.container}>
-          {/* <View>
-         <Text style={{...styles.title,color:"red",backgroundColor:"white"}}>Streak</Text>
+    <ImageBackground
+      source={require("/home/jarledev/github/expo/fitAndRich/assets/images/appBackground.png")}
+      style={{ height: "100%" }}
+      blurRadius={0}>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.caloriesContainer}>
+          <View style={styles.textContainer}>
+            <Text style={styles.smallerText}>Remaining</Text>
+            <Text style={styles.text}></Text>
+          </View>
+          <Text style={styles.resetText}>Resets in: 542</Text>
         </View>
-*/}
 
-          <View style={styles.caloriesContainer}>
-            <View style={styles.textContainer}>
-              <Text style={styles.smallerText}>Remaining</Text>
-              <Text style={styles.text}>
-                {dailyAllowance -
-                  state.meals.reduce((acc, meal) => acc + meal.calories, 0)}
-              </Text>
-            </View>
-            <Text style={styles.resetText}>Resets in: 542</Text>
-          </View>
-
-          <View
+        <View
+          style={{
+            gap: 8,
+            backgroundColor: "#8BA493",
+            borderRadius: 12,
+            padding: 10,
+          }}>
+          <TextInput
             style={{
-              gap: 8,
-              backgroundColor: "#8BA493",
+              width: 235,
+              padding: 15,
+              backgroundColor: "white",
+              color: "black",
               borderRadius: 12,
-              padding: 10,
-            }}>
-            <TextInput
-              style={{
-                width: 235,
-                padding: 15,
-                backgroundColor: "white",
-                color: "black",
-                borderRadius: 12,
-                fontWeight: "bold",
-              }}
-              onChangeText={setText}
-              value={state.text}
-              placeholder="What did you eat?"
-            />
-            <TextInput
-              inputMode="numeric"
-              style={{
-                width: 235,
-                padding: 15,
-                backgroundColor: "white",
-                color: "black",
-                borderRadius: 12,
-                fontWeight: "bold",
-              }}
-              onChangeText={setCalories}
-              value={state.calories}
-              placeholder="Number of Calories"
-            />
-            <Pressable
-              style={styles.button}
-              onPress={() => {
-                setState((prev) => ({
-                  ...prev,
-                  meals: [
-                    ...prev.meals,
-                    {
-                      id: state.meals.length,
-                      mealName: state.text,
-                      calories: parseInt(state.calories),
-                    },
-                  ],
-                }));
-                addMeal({
-                  mealName: state.text,
-                  calories: parseInt(state.calories),
-                  created: today,
-                });
-              }}
-              onLongPress={() => alert("this is a long press")}>
-              <Text style={{ fontSize: 20, fontWeight: "bold" }}>Log Meal</Text>
-            </Pressable>
-          </View>
-          <FlatList
-            style={{ width: 245, borderRadius: 12, padding: 10, marginTop: 20 }}
-            data={state.meals}
-            renderItem={({ item }) => <MealComponent {...item} />}
-            keyExtractor={(item) => item.id.toString()}
+              fontWeight: "bold",
+            }}
+            onChangeText={setMealName}
+            value={mealName}
+            placeholder="What did you eat?"
           />
-          <View>
-            <Text>
-              SUM {state.meals.reduce((acc, meal) => acc + meal.calories, 0)}
-            </Text>
-          </View>
-        </SafeAreaView>
-      </ImageBackground>
-    </>
+          <TextInput
+            inputMode="numeric"
+            style={{
+              width: 235,
+              padding: 15,
+              backgroundColor: "white",
+              color: "black",
+              borderRadius: 12,
+              fontWeight: "bold",
+            }}
+            onChangeText={setCalories}
+            value={calories}
+            placeholder="Number of Calories"
+          />
+          <Pressable style={styles.button} onPress={() => {}}>
+            <Text style={{ fontSize: 20, fontWeight: "bold" }}>Log Meal</Text>
+          </Pressable>
+        </View>
+        <FlatList
+          style={{ width: 245, borderRadius: 12, padding: 10, marginTop: 20 }}
+          data={useStore((state) => state.meals)}
+          renderItem={({ item }) => (
+            <MealComponent
+              calories={item.calories}
+              id={item.id}
+              mealName={item.mealName}
+            />
+          )}
+          keyExtractor={(item) => item.id.toString()}
+        />
+        <View>
+          <Text>
+            SUM:{" "}
+            {useStore((state) =>
+              state.meals.reduce((acc, meal) => acc + meal.calories, 0)
+            )}
+          </Text>
+        </View>
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
